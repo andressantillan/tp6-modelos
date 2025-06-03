@@ -1,0 +1,130 @@
+COSTO_MANTENIMIENTO = 450
+COSTO_PEDIDO = 3800
+COSTO_FALTANTE = 625
+INVENTARIO_INICIAL = 1500
+COSTO_UNIDAD = 950
+CANTIDAD_PEDIDO = 100
+PUNTO_REORDEN = 15
+CANTIDAD_DIAS = 365 // 1 anio
+
+
+//Retorna una demanda diaria en base a las probabilidades
+funcion obtenerDemandaDiariaAleatoria(probabilidades, demandas):
+
+//Retorna un tiempo aleatorio de entrega de producto
+funcion tiempoEntregaProductoAleatorio(probabilidades, tiempoEntrega):
+
+//Retorn un tiempo de espera aleatorio para la llegada del pedido
+funcion tiempoEsperaPedidoAleatorio(probabilidades, tiempoEspera):
+
+//Retorna el siguiente evento de la lista
+funcion obtenerSiguienteEvento(lista)
+
+//Crea una entrega de producto con el plazo de tiempo y la cantidad de stock a entregar
+funcion crearEntrega(tiempo, cantidad)
+
+// Crea un evento de pedido indicando la demanda original a satisfacer y la demanda pendiente si es que existe
+function crearPedido(cantidad, demanda, demanda_pendiente)
+
+/*
+    Evento tiene metodos que varian segun el tipo de evento:
+
+    // Obtiene la cantidad de productos solicitados al proveedor
+    funcion obtenerCantidadPedido():
+
+    //Obtiene la demanda a satisfacer por la cual se hizo el pedido
+    funcion obtenerDemanda():
+
+    // Obtiene la demanda restante a cumplir del pedido
+    funcion obtenerDemandaPendiente():
+
+    // Obtiene la cantidad de productos a entregar 
+    funcion obtenerDemandaEntrega():
+
+    // Obtiene el siguiente evento de la lista. Devuelve falso si es una lista vacia
+    funcion obtenerSiguienteEvento():
+
+    // Obtiene el dia del evento
+    funcion obtenerDia():
+
+    // Obtiene el tipo del evento
+    funcion obtenerTipo():
+*/
+
+
+eventos_iniciales = [...]
+
+procedimiento main():
+    lista_eventos = eventos_iniciales
+    dia_actual = 0
+    stock_real = INVENTARIO_INICIAL
+    costo_mantenimiento = 0
+    costo_faltante = 0
+    stock_reservado = 0
+
+    mientras no esListaVacia(lista_eventos):
+
+        evento_actual = obtenerSiguienteEvento(lista_eventos)
+        dia_actual = evento_actual.obtenerDia()
+
+        si dia_actual == CANTIDAD_DIAS: salir_bucle
+
+        segun evento_actual.obtenerTipo():
+            "demanda":
+                si demanda <= stock_real:
+                    stock_reservado += demanda
+                    stock_real -= demanda
+                    tiempo_entrega = dia + tiempoEntregaProductoAleatorio()
+                    evento_entrega = crearEntrega(tiempo_entrega, demanda)
+                    lista_eventos.agregarEvento(evento_entrega)
+                sino si stock_real < demanda:
+                    unidades_faltantes = demanda - stock_real
+                    stock_reservado += stock_real
+                    stock = 0
+                    costo_faltante += unidades_faltantes * COSTO_FALTANTE
+                    costo_pedido += (CANTIDAD_PEDIDO * COSTO_UNIDAD) + COSTO_PEDIDO
+                    tiempo_espera = dia + tiempoEsperaPedidoAleatorio()
+                    demanda_pendiente = unidades_faltantes
+                    evento_pedido = crearPedido(CANTIDAD_PEDIDO, demanda, demanda_pendiente)
+                
+            "llegada_pedido":
+                // Obtengo la cantidad de demanda restante (pendiente) a cubrir
+                demanda_pendiente = evento_actual.obtenerDemandaPendiente()
+                demanda = evento_actual.obtenerDemanda()
+                
+                si demanda == 0 y demanda_pendiente == 0:
+                    // Se acumula la cantidad de CANTIDAD_PEDIDO
+                    stock_real += evento_actual.obtenerCantidadPedido() 
+                sino si demanda_pendiente <= stock_real
+                    stock_reservado += demanda_pendiente
+                    stock_real -= demanda_pendiente
+                    tiempo_entrega = dia + tiempoEntregaProductoAleatorio()
+                    evento_entrega = crearEntrega(tiempo_entrega, demanda)
+                    lista_eventos.agregarEvento(evento_entrega)
+                sino si stock_real < demanda_pendiente:
+                    // tengo que volver a pedir porque no puedo cubrir el total
+                    costo_pedido += (CANTIDAD_PEDIDO * COSTO_UNIDAD) + COSTO_PEDIDO
+                    tiempo_espera = dia + tiempoEsperaPedidoAleatorio()
+                    demanda_pendiente = demanda - stock_real
+                    stock_reservado += stock_real
+                    evento_pedido = crearPedido(CANTIDAD_PEDIDO, demanda, demanda_pendiente)
+                    lista_eventos.agregarEvento(evento_pedido)
+            
+            "entrega_pedido":
+                demanda = evento_actual.obtenerDemandaEntrega()
+                stock_reservado -= demanda
+
+        si stock <= PUNTO_REORDEN:
+            costo_pedido += (CANTIDAD_PEDIDO * COSTO_UNIDAD) + COSTO_PEDIDO
+            tiempo_espera = dia + tiempoEsperaPedidoAleatorio()
+            // se crea un pedido con demanda a cubrir en 0 y pendiente en 0. Es para difierenciar de los casos de pedido
+            evento_pedido = crearPedido(CANTIDAD_PEDIDO, 0, 0)
+            lista_eventos.agregarEvento(evento_pedido)
+
+        lista_eventos.ordenarEventos()
+        costo_mantenimiento += (stock_real + stock_reservado) * COSTO_MANTENIMIENTO
+                
+
+// Demanda solicitada se utiliza para saber si puedo cumplir con el total del pedido. 
+// Por ejemplo, si mi stock es de 100 y me piden 300, tengo que pedir dos veces mas para cubrir esa demanda.
+// 

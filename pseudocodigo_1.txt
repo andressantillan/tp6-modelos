@@ -1,0 +1,42 @@
+PRODUCCION_POR_DIA = 130
+PUNTO_REORDEN = 50
+COSTO_MANTENIMIENTO = 70
+CANTIDAD_DIAS = 250
+CANTIDAD_ANIOS = 30
+INVENTARIO_INCIAL = 90
+DEMANDA_HISTORICA = 150
+DESVIO_ESTANDAR = 25
+
+//retorna un numero aleatoria siguiendo una distribucion normal
+funcion numAleatorioNormal(media, desvio):
+
+// dado un conjunto de numeros, retorna el promedio del arreglo
+funcion promedio(valores):
+
+procedimiento main():
+    costo_anual_total = []
+    turno_adicional_total = []
+    stock = INVENTARIO_INCIAL
+    desde anio = 1 hasta CANTIDAD_ANIOS:
+        costo_mantenimiento = 0
+        turno_adicional = 0 
+        desde dia = 1 hasta CANTIDAD_DIAS:
+            
+            demanda_dia = numAleatorioNormal(DEMANDA_HISTORICA, DESVIO_ESTANDAR)
+            si demanda <= stock:
+                stock -= demanda
+
+            si stock < PUNTO_REORDEN:
+                stock += PRODUCCION_POR_DIA
+                turno_adicional += 1
+            
+            costo_mantenimiento += COSTO_MANTENIMIENTO * stock
+        
+        costo_anual_total[] = costo_mantenimiento
+        turno_adicional_total = turno_adicional
+    
+    mostrar('El promedio de costo anual de mantenimiento es:')
+    mostrar(promedio(costo_anual_total))
+
+    mostrar('El promedio de turnos adicionales necesario es:')
+    mostrar(promedio(turno_adicional_total))
